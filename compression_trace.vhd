@@ -1,35 +1,18 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
+-- Code developed by Jose Manuel Deltoro Berrio
+-- University of Valencia - Escuela Técnica Superior d'Enginyeria (ETSE)
+---------------------------------
 -- Create Date:    16:14:19 10/02/2018 
--- Design Name: 
 -- Module Name:    compression_trace - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
+-- Project Name:  NUMEXO2 firmware NEDA
+-- Target Devices: FPGA - Virtex-6
+
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
 use IEEE.STD_LOGIC_SIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
---use ieee.numeric_std_unsigned.all;
--- Uncomment the following library declaration if instantiating
--- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 library work;
 use work.types_dcfd.all;
@@ -50,14 +33,7 @@ Port (
 	read_OUT_sig 		: out std_logic;
 	sample_diff0_debug: out std_logic_vector (14 downto 0);
 	sample_diff1_debug: out std_logic_vector (14 downto 0);
---	debug_state_comp	: out std_logic_vector (2 downto 0);
---	debug_diff_comp   : out std_logic_vector (1 downto 0);
---	debug_mov_comp    : out std_logic_vector (1 downto 0);
---	debug_pack_comp   : out std_logic_vector (2 downto 0);
-	
 	reading_comp_out	: out	std_logic;
---	empty_fifos_comp	: out std_logic;
---	compression_start : out std_logic;
 	SAMPLE1_joined		: out std_logic_vector (15 downto 0);
 	SAMPLE0_joined		: out std_logic_vector (15 downto 0);
 	size_trace_out 	: out std_logic_vector (15 downto 0);
@@ -74,11 +50,7 @@ architecture Behavioral of compression_trace is
 signal SAMPLE0_in_sig  : std_logic_vector (14 downto 0):= (others => '0');
 signal SAMPLE1_in_sig  : std_logic_vector (14 downto 0):= (others => '0');
 signal SAMPLE1_in_sig_dly	  : std_logic_vector (14 downto 0):= (others => '0');
-
---signal read_en_even  : std_logic:='0';
---signal read_en_odd  : std_logic:='0';
 signal read_en  : std_logic:='0';
---signal write_fifos : std_logic:='0';
 signal write_fifo_256 : std_logic:='0';
 signal first: std_logic:='1';
 signal first_samp: std_logic:='1';
@@ -86,9 +58,6 @@ signal second_samp: std_logic:='1';
 signal second: std_logic:='1';
 signal wait_samp: std_logic:='1';
 signal firstsamples: std_logic_vector (1 downto 0):= (others => '0');
-
---signal empty_fifos_comp_sig: std_logic:='1';
-
 signal wr0_en_out : std_logic:='0';
 signal rd0_en_out : std_logic:='0';
 signal empty0_out : std_logic:='0';
@@ -100,26 +69,10 @@ signal empty1_out : std_logic:='0';
 signal full1_out : std_logic:='0';
 signal reading_OUT_sig: std_logic:='0';
 
---signal full_fifo_even : std_logic:='0';
---signal full_fifo_odd : std_logic:='0';
-
---signal empty_fifo_odd : std_logic:='0';
---signal empty_fifo_even : std_logic:='0';
-
---signal full_fifo_256 : std_logic:='0';
-----signal empty_fifo_256 : std_logic:='0';
---signal read_fifo_256 : std_logic:='0';
---signal count_samp	: std_logic_vector (7 downto 0):= (others => '0');
 signal counter	: std_logic_vector (2 downto 0):= (others => '0');
 signal count_header : std_logic_vector (5 downto 0):= (others => '0'); 
 
 signal count_wait	: std_logic_vector (1 downto 0):= (others => '0');
---signal count_waiting	: std_logic_vector (2 downto 0):= (others => '0');
---signal cnt_firsts  : std_logic:='0';
- 
-
---signal SIZE_SAMPLE : integer:= 0;
---signal pos			 : integer:= 0;
 
 signal cnt_compress		: std_logic_vector (7 downto 0):= (others => '0'); -- counter for compression
 signal cnt_diff		: std_logic_vector (7 downto 0):= (others => '0'); -- counter for differences
@@ -137,13 +90,6 @@ signal sample_diff0_out_fifo  : std_logic_vector (14 downto 0):= (others => '0')
 signal sample_diff1_out_fifo  : std_logic_vector (14 downto 0):= (others => '0');
 
 
-
---signal fifo_in_256  : std_logic_vector (15 downto 0):= (others => '0');
---signal fifo_out_256  : std_logic_vector (15 downto 0):= (others => '0');
---signal fifo_in_256_pre : std_logic_vector (15 downto 0):= (others => '0');
---signal fifo_out_256_pre : std_logic_vector (15 downto 0):= (others => '0');
-
-
 signal sample_diff0_in_sig  : std_logic_vector (14 downto 0):= (others => '0');
 signal sample_diff1_in_sig  : std_logic_vector (14 downto 0):= (others => '0');
 signal SAMPLE0_out_sig  : std_logic_vector (15 downto 0):= (others => '0');
@@ -154,8 +100,6 @@ signal compress_SAMPLE0_out  : std_logic_vector (15 downto 0):= (others => '0');
 signal compress_SAMPLE1_out  : std_logic_vector (15 downto 0):= (others => '0');
 signal size_trace : std_logic_vector (15 downto 0):= (others => '0');
 signal trace_size	: std_logic_vector (15 downto 0):= (others => '0');
-
---signal pack_pre_readout  : std_logic_vector (15 downto 0):= (others => '0');
 
 type state_comp is (INIT, WAITING, DIFF_SAMPLES);
 signal current_state : state_comp;
@@ -279,79 +223,7 @@ end process;
 
  sample_diff0_debug <=  sample_diff0_in_sig;
  sample_diff1_debug <=  sample_diff1_in_sig;
---
---
---moving_samples : process (clk,rst, current_state, pack_state) -- Moving the differences in the input samples
---begin
---
---	if (rst = '1') then
---		read_en_even <= '0';	
---		read_en_odd <= '0';
---
---	elsif (rising_edge(clk)) then
---		case mov_state is
---			when INIT =>
---				read_en_even <= '0';	
---				read_en_odd <= '0';
---				first	<= '1';
---				second <= '1';
---				write_fifo_256 <= '0';
---				if current_state = DIFF_SAMPLES or current_state = WAITING then
---					mov_state <= TAKE_even;
---				end if;
---			
---			-- when WAITING =>
---			-- 	counter <= counter + 1;
---			-- 	if counter = 1 then
---			-- 		mov_state <= TAKE_even;
---			-- 	end if;
---			
---			-- when READ_first_sample =>
---			-- 	read_en_odd <= '1';					
---			-- 	read_en_even <= '0';
---			-- 	fifo_in_256 <= '0' & sample_diff0_out_fifo;
---			-- 	mov_state <= TAKE_even;
---				
---			when TAKE_odd =>
---				write_fifo_256 <= '1';
---				read_en_odd <= '1';					
---				read_en_even <= '0';
---				
---				if second = '1' then
---					fifo_in_256 <= '0' & sample_diff1_out_fifo; -- 
---				else
---					fifo_in_256 <= mask_ones(sample_diff1_out_fifo,SIZE_SAMPLE,pos);
---				end if;
---				mov_state <= TAKE_even;
---				
---				if empty_fifo_even = '1' and current_state = INIT then
---					mov_state <= INIT;
---				end if;
---							
---			when TAKE_even =>
---				read_en_even <= '1';	
---				read_en_odd <= '0';
---				if first = '1' then
---					fifo_in_256 <= '0' & sample_diff0_out_fifo; -- 
---					first <= '0';
---					elsif pack_state = SAMPLES_peak  then
---							fifo_in_256 <= mask_ones(sample_diff0_out_fifo,SIZE_SAMPLE,pos);
---					else
---					second <= '0';
---						fifo_in_256 <= mask_ones(sample_diff0_out_fifo,SIZE_SAMPLE,pos);
---				end if;
---				
---				mov_state <= TAKE_odd;
---				
---				if empty_fifo_even = '1' and current_state = INIT then
---					mov_state <= INIT;
---				end if;
---			
---			end case;
---	end if;		
---end process;
 
-			
 
 packaging : process (clk,rst) 
 begin
@@ -484,43 +356,7 @@ if (rst = '1') then
 						--compression_start <= '1';
 				--	end if;
 				end if;	
-				
---			when READING_B =>
---					wr1_en_out <= '0';
---					wr0_en_out <= '0';		
---				if (pack_state = SAMPLES_peak and count_aux > 2) or  (pack_state = SAMPLES_post and count < 1) or second_samp = '1' then
---					SAMPLE1_out_sig <= fifo_out_256;
---					second_samp <= '0'; 
---			--		fifo_out_256_pre <= fifo_out_256;
---					join_state <= READING_A;
---					wr0_en_out <= '1';
---					wr1_en_out <= '0';
---					size_trace <= size_trace + 1;
---					--size_trace_out <= size_trace;
---				else
---					fifo_out_256_pre <= fifo_out_256;
---					join_state <= JOIN_B;
---				end  if;	
---				
-----				if write_fifo_256 = '0' and size_trace_out = X"0000" then
-----					size_trace_out <= size_trace;
-----				end if;
---				
---		--		if size_trace < X"00E8" then
---		--			join_state <= JOIN_B;
---		--		end if;				
---				  -- if write_fifo_25 0 entonces guardo valor size
---				  -- if  size_trace =  al maximo entonces reading;
---				  
---				if write_fifo_256 = '0' and trace_size = X"0000" then
---				  trace_size  <= size_trace; 
---				end if;	
---				
---				if write_fifo_256 = '0' and size_trace = X"0100" then
---					join_state <= READING_OUT;
---					--size_trace_out <= trace_size;
---					wr0_en_out <= '1';
---				end if;	
+	
 				
 			when JOIN_B =>
 					
@@ -537,17 +373,6 @@ if (rst = '1') then
 					wr1_en_out <= '1';
 					size_trace <= size_trace + 1;	
 					
---				if empty_fifo_even = '1' and current_state = INIT then
---					mov_state <= INIT;
---				end if;
-					--if pack_state = SAMPLES_peak then
-					--	join_state <= READING_A;
-					--	SAMPLE0_out_sig <= '0' & sample_diff0_in_sig;
-					--	SAMPLE1_out_sig <= '0' & sample_diff1_in_sig;
-					--end if;
-						
-					
-					--if empty_fifo_even = '1' and size_trace = X"0100" then
 					if pack_state = INITIAL then
 						join_state <= READING_OUT;
 						SAMPLE0_out_sig <= (others => '0');
@@ -585,24 +410,7 @@ if (rst = '1') then
 					
 					
 					end  if;	
---				
-----				if write_fifo_256 = '0' and size_trace_out = X"0000" then
-----					size_trace_out <= size_trace;
-----				end if;
---				
---				--if size_trace < X"00E8" then
---			--		join_state <= JOIN_A;
---			--	end if;
---				
---				if write_fifo_256 = '0' and trace_size = X"0000" then
---				  trace_size  <= size_trace; 
---				end if;	
---				
---				if write_fifo_256 = '0' and size_trace = X"0100" then
---					join_state <= READING_OUT;
---					--size_trace_out <= trace_size;
---					wr1_en_out <= '1';
---				end if;	
+
 				
 			when JOIN_A =>
 					if size_trace > trace_size and trace_size /= X"0000" then
@@ -665,14 +473,7 @@ if (rst = '1') then
 			
 			when others =>
 				join_state <= START;
-					
 
-			--	count_wait <= count_wait + 1;
-			--	if count_wait = 1 then
-					
-				--	join_state <= READING_A;
-				--	wr0_en_out <= '1';
-			--	end if;
 			
 			end case;
 	end if;		
